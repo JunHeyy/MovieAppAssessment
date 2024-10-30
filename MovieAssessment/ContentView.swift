@@ -1,88 +1,78 @@
-//
-//  ContentView.swift
-//  MovieAssessment
-//
-//  Created by Xavier Toh on 29/10/24.
-//
-
 import SwiftUI
-import CoreData
+import Lottie
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
+    @StateObject private var authViewModel = AuthViewModel() // Create an instance of AuthViewModel
 
     var body: some View {
         NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+            VStack {
+                LottieView(animation: .named("popcorn"))
+                    .playbackMode(.playing(.toProgress(1, loopMode: .loop)))
+
+                Text("Access more with an Account")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.blue)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 20)
+
+                Text("Login to an account so you could access more features")
+                    .font(.body)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 40)
+
+                if authViewModel.isLoggedIn {
+                    // User is logged in
+                    Text("Welcome back, \(authViewModel.username)!")
+                        .font(.headline)
+                        .foregroundColor(.green)
+                        .padding()
+
+                    NavigationLink(destination: MovieListView()) {
+                        Text("Go to Movies")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .font(.headline)
+                            .cornerRadius(10)
                     }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    .padding(.horizontal)
+                } else {
+                    // User is not logged in
+                    NavigationLink(destination: WelcomeBackView()) {
+                        Text("Login")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .font(.headline)
+                            .cornerRadius(10)
                     }
+                    .padding(.horizontal)
+
+                    Button(action: {
+                        // Handle sign-up action here
+                        // You can navigate to a Sign Up View here if needed
+                    }) {
+                        Text("Sign Up")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.white)
+                            .foregroundColor(.blue)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.blue, lineWidth: 2)
+                            )
+                            .font(.headline)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
                 }
             }
-            Text("Select an item")
+            .padding()
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

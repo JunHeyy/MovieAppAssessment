@@ -1,56 +1,156 @@
+//import CoreData
+//import Foundation
+//import UIKit // Import UIKit for UIApplication
 //
-//  Persistence.swift
-//  MovieAssessment
+//struct PersistenceController {
+//    static let shared = PersistenceController()
 //
-//  Created by Xavier Toh on 29/10/24.
+//    let container: NSPersistentContainer
 //
-
-import CoreData
-
-struct PersistenceController {
-    static let shared = PersistenceController()
-
-    static var preview: PersistenceController = {
-        let result = PersistenceController(inMemory: true)
-        let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-        }
-        do {
-            try viewContext.save()
-        } catch {
-            // Replace this implementation with code to handle the error appropriately.
-            // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
-        return result
-    }()
-
-    let container: NSPersistentContainer
-
-    init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "MovieAssessment")
-        if inMemory {
-            container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
-        }
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-            if let error = error as NSError? {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-
-                /*
-                 Typical reasons for an error here include:
-                 * The parent directory does not exist, cannot be created, or disallows writing.
-                 * The persistent store is not accessible, due to permissions or data protection when the device is locked.
-                 * The device is out of space.
-                 * The store could not be migrated to the current model version.
-                 Check the error message to determine what the actual problem was.
-                 */
-                fatalError("Unresolved error \(error), \(error.userInfo)")
-            }
-        })
-        container.viewContext.automaticallyMergesChangesFromParent = true
-    }
-}
+//    init(inMemory: Bool = false) {
+//        container = NSPersistentContainer(name: "MovieEntity")
+//        if inMemory {
+//            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+//        }
+//        container.loadPersistentStores { (description, error) in
+//            if let error = error as NSError? {
+//                fatalError("Unresolved error \(error), \(error.userInfo)")
+//            } 
+//        }
+//    }
+//    
+//    // Load movies from Core Data
+//    func loadMovies() -> [Movie] {
+//        let context = container.viewContext
+//        let fetchRequest: NSFetchRequest<MovieEntity> = MovieEntity.fetchRequest()
+//
+//        do {
+//            print("Attempting to load movies from coredata")
+//            let movieEntities = try context.fetch(fetchRequest)
+//            print("Success loading from core data")
+//            return movieEntities.compactMap { movieEntity in
+//                // Create a Movie object, handling optional values appropriately
+//                guard let title = movieEntity.title,
+//                      let year = movieEntity.year,
+//                      let imdbID = movieEntity.imdbID,
+//                      let type = movieEntity.type,
+//                      let poster = movieEntity.poster else {
+//                    print("MovieEntity has missing properties.")
+//                    return nil
+//                }
+//          
+//                return Movie(title: title, year: year, imdbID: imdbID, type: type, poster: poster)
+//            }
+//        } catch {
+//            print("Failed to fetch movies from Core Data: \(error.localizedDescription)")
+//            return []
+//        }
+//    }
+//    
+//    // Save movies to Core Data
+//    func saveMovies(_ movies: [Movie]) {
+//        let context = container.viewContext
+//
+//        // Create a fetch request for MovieEntity
+//        let fetchRequest: NSFetchRequest<MovieEntity> = MovieEntity.fetchRequest()
+//        
+//        // Create an asynchronous fetch request
+//        let asyncFetchRequest = NSAsynchronousFetchRequest(fetchRequest: fetchRequest) { result in
+//            if let existingMovies = result.finalResult {
+//                for movieEntity in existingMovies {
+//                    context.delete(movieEntity)
+//                }
+//            }
+//            for movie in movies {
+//                let movieEntity = MovieEntity(context: context)
+//                movieEntity.imdbID = movie.imdbID
+//                movieEntity.title = movie.title
+//                movieEntity.year = movie.year
+//                movieEntity.type = movie.type
+//                movieEntity.poster = movie.poster
+//            }
+//
+//            do {
+//                print("Attempting to save movies to coredata")
+//                try context.save()
+//                print("Successfully saved movies to Core Data.")
+//            } catch {
+//                print("Failed to save movies to Core Data: \(error.localizedDescription)")
+//            }
+//        }
+//        do {
+//            try context.execute(asyncFetchRequest)
+//        } catch {
+//            print("Failed to execute asynchronous fetch request: \(error.localizedDescription)")
+//        }
+//    }
+//
+//    // Add multiple movies to Core Data
+//    func addMovies(_ movies: [Movie]) {
+//        let context = container.viewContext
+//        for movie in movies {
+//            let movieEntity = MovieEntity(context: context)
+//            movieEntity.imdbID = movie.imdbID
+//            movieEntity.title = movie.title
+//            movieEntity.year = movie.year
+//            movieEntity.type = movie.type
+//            movieEntity.poster = movie.poster
+//        }
+//        
+//        do {
+//            try context.save()
+//            print("Successfully added movies to Core Data.")
+//        } catch {
+//            print("Error saving movies: \(error.localizedDescription)")
+//        }
+//    }
+//
+//    // Update multiple movies in Core Data
+//    func updateMovies(with updatedMovies: [Movie]) {
+//        let context = container.viewContext
+//        
+//        for updatedMovie in updatedMovies {
+//            let fetchRequest: NSFetchRequest<MovieEntity> = MovieEntity.fetchRequest()
+//            fetchRequest.predicate = NSPredicate(format: "imdbID == %@", updatedMovie.imdbID)
+//
+//            do {
+//                let movieEntities = try context.fetch(fetchRequest)
+//                if let movieEntity = movieEntities.first {
+//                    movieEntity.title = updatedMovie.title
+//                    movieEntity.year = updatedMovie.year
+//                    movieEntity.type = updatedMovie.type
+//                    movieEntity.poster = updatedMovie.poster
+//                } else {
+//                    print("Movie with IMDB ID \(updatedMovie.imdbID) not found for update.")
+//                }
+//            } catch {
+//                print("Error updating movie: \(error.localizedDescription)")
+//            }
+//        }
+//
+//        do {
+//            try context.save()
+//            print("Successfully updated movies in Core Data.")
+//        } catch {
+//            print("Error saving updated movies: \(error.localizedDescription)")
+//        }
+//    }
+//
+//    // Delete multiple movies from Core Data by IMDB IDs
+//    func deleteMovies(imdbIDs: [String]) {
+//        let context = container.viewContext
+//        let fetchRequest: NSFetchRequest<MovieEntity> = MovieEntity.fetchRequest()
+//        fetchRequest.predicate = NSPredicate(format: "imdbID IN %@", imdbIDs)
+//
+//        do {
+//            let movieEntities = try context.fetch(fetchRequest)
+//            for movieEntity in movieEntities {
+//                context.delete(movieEntity)
+//            }
+//            try context.save()
+//            print("Successfully deleted movies from Core Data.")
+//        } catch {
+//            print("Error deleting movies: \(error.localizedDescription)")
+//        }
+//    }
+//}
