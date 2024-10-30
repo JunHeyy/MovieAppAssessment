@@ -48,16 +48,14 @@ class CoreDataManager: ObservableObject {
             movieEntity.type = movie.type
             movieEntity.year = movie.year
             
-            // Download and save the poster image
+            
             if let posterURL = URL(string: movie.poster) {
                 downloadImage(from: posterURL) { imageData in
                     movieEntity.imageData = imageData
-                    // Save context after downloading the image
                     self.saveContext()
                 }
             }
             
-            // Add the movie entity to the search term
             searchTermEntity.addToMovieitem(movieEntity)
         }
 
